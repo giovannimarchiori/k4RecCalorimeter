@@ -9,6 +9,7 @@ from Configurables import CalibrateCaloClusters
 from Configurables import CreateEmptyCaloCellsCollection
 from Configurables import CreateCaloCellPositionsFCCee
 from Configurables import CellPositionsECalBarrelModuleThetaSegTool
+# from Configurables import CellPositionsECalEndcapTurbineSegTool(
 from Configurables import RedoSegmentation
 from Configurables import CreateCaloCells
 from Configurables import CalibrateCaloHitsTool
@@ -220,7 +221,7 @@ else:
 # ECAL
 ecalBarrelReadoutName = "ECalBarrelModuleThetaMerged"
 ecalBarrelReadoutName2 = "ECalBarrelModuleThetaMerged2"
-ecalEndcapReadoutName = "ECalEndcapPhiEta"
+ecalEndcapReadoutName = "ECalEndcapTurbine"
 # HCAL
 if runHCal:
     hcalBarrelReadoutName = "HCalBarrelReadout"
@@ -390,6 +391,24 @@ createEcalEndcapCells = CreateCaloCells("CreateEcalEndcapCaloCells",
 createEcalEndcapCells.hits.Path = "ECalEndcapHits"
 createEcalEndcapCells.cells.Path = "ECalEndcapCells"
 
+# Add to Ecal endcap cells the position information
+# (good for physics, all coordinates set properly)
+# not yet merged!!
+# cellPositionEcalEndcapTool = CellPositionsECalEndcapTurbineSegTool(
+#    "CellPositionsECalEndcap",
+#    readoutName=ecalEndcapReadoutName,
+#    OutputLevel=INFO
+#)
+#ecalEndcapPositionedCellsName = "ECalEndcapPositionedCells"
+#createEcalEndcapPositionedCells = CreateCaloCellPositionsFCCee(
+#    "CreateECalEndcapPositionedCells",
+#    OutputLevel=INFO
+#)
+#createEcalEndcapPositionedCells.positionsTool = cellPositionEcalEndcapTool
+#createEcalEndcapPositionedCells.hits.Path = ecalEndcapCellsName
+#createEcalEndcapPositionedCells.positionedHits.Path = ecalEndcapPositionedCellsName
+
+
 if runHCal:
     # Create cells in HCal
     # 1 - merge hits into cells with the default readout
@@ -494,7 +513,7 @@ towers = CaloTowerToolFCCee("towers",
                             deltaPhiTower=2 * pi / 256.,
                             max_layer=25,
                             ecalBarrelReadoutName=ecalBarrelReadoutName,
-                            ecalEndcapReadoutName="",
+                            ecalEndcapReadoutName=ecalEndcapReadoutName,
                             ecalFwdReadoutName="",
                             hcalBarrelReadoutName=hcalBarrelReadoutName2,
                             hcalExtBarrelReadoutName="",
@@ -502,9 +521,10 @@ towers = CaloTowerToolFCCee("towers",
                             hcalFwdReadoutName="",
                             OutputLevel=INFO)
 towers.ecalBarrelCells.Path = ecalBarrelPositionedCellsName
+# not yet merged
+# towers.ecalBarrelCells.Path = ecalEndcapPositionedCellsName
 towers.ecalEndcapCells.Path = "emptyCaloCells"
 towers.ecalFwdCells.Path = "emptyCaloCells"
-
 towers.hcalBarrelCells.Path = hcalBarrelPositionedCellsName2
 towers.hcalExtBarrelCells.Path = "emptyCaloCells"
 towers.hcalEndcapCells.Path = "emptyCaloCells"
@@ -615,7 +635,8 @@ TopAlg = [
     resegmentEcalBarrel,
     createEcalBarrelCells2,
     createEcalBarrelPositionedCells2,
-    createEcalEndcapCells
+    createEcalEndcapCells,
+    # createEcalEndcapPositionedCells,
 ]
 
 if runHCal:
