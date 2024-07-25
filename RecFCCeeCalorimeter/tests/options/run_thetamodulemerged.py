@@ -10,7 +10,7 @@ from Configurables import AugmentClustersFCCee
 from Configurables import CreateEmptyCaloCellsCollection
 from Configurables import CreateCaloCellPositionsFCCee
 from Configurables import CellPositionsECalBarrelModuleThetaSegTool
-# from Configurables import CellPositionsECalEndcapTurbineSegTool(
+# from Configurables import CellPositionsECalEndcapTurbineSegTool
 from Configurables import RedoSegmentation
 from Configurables import CreateCaloCells
 from Configurables import CalibrateCaloHitsTool
