@@ -92,6 +92,10 @@ StatusCode SimulateSiPMwithEdep::initialize() {
   properties.setPdeType(sipm::SiPMProperties::PdeType::kSpectrumPde);
   properties.setPdeSpectrum(m_wavelen, m_sipmEff);
 
+  // set other parameters if provided
+  for (const auto& [key, value] : m_params.value())
+    properties.setProperty(key, value);
+
   m_sensor = std::make_unique<sipm::SiPMSensor>(properties); // must be constructed from SiPMProperties
 
   info() << "SimulateSiPMwithEdep initialized" << endmsg;
@@ -133,6 +137,7 @@ StatusCode SimulateSiPMwithEdep::execute(const EventContext&) const {
   const edm4hep::SimCalorimeterHitCollection* scintHits = m_scintHits.get();
   edm4hep::CalorimeterHitCollection* digiHits = m_digiHits.createAndPut();
   edm4hep::TimeSeriesCollection* waveforms = m_waveforms.createAndPut();
+  edm4hep::CaloHitSimCaloHitLinkCollection* hitLinks = m_hitLinks.createAndPut();
 
   const double yield = m_scintYield.value() / dd4hep::keV;
 
@@ -142,6 +147,9 @@ StatusCode SimulateSiPMwithEdep::execute(const EventContext&) const {
 
     std::vector<double> vecTimes;
     std::vector<double> vecWavelens;
+
+    // SimSiPM ignores negative time photons, so translate the whole time structure if needed
+    double minTime = 0.;
 
     for (auto contrib = scintHit.contributions_begin(); contrib != scintHit.contributions_end(); ++contrib) {
       const double edep = contrib->getEnergy() * dd4hep::GeV;
@@ -228,26 +236,36 @@ StatusCode SimulateSiPMwithEdep::execute(const EventContext&) const {
         // get scintillation time
         double scintTime = arrivalTime + m_rndmExp.shoot();
 
+        if (scintTime < minTime)
+          minTime = scintTime;
+
         vecTimes.push_back(scintTime);
         vecWavelens.push_back(valWav);
       } // ipho
     } // contrib
 
+    // shift times to non-negative
+    std::vector<double> vecTimesShifted(vecTimes.size());
+    std::transform(vecTimes.begin(), vecTimes.end(), vecTimesShifted.begin(),
+                   [minTime](double t) { return t - minTime; });
+
     m_sensor->resetState();
-    m_sensor->addPhotons(vecTimes, vecWavelens); // Sets photon times & wavelengths
+    m_sensor->addPhotons(vecTimesShifted, vecWavelens); // Sets photon times & wavelengths
     m_sensor->runEvent();                        // Runs the simulation
 
     auto digiHit = digiHits->create();
     auto waveform = waveforms->create();
+    auto hitLink = hitLinks->create();
+    hitLink.setFrom(digiHit);
+    hitLink.setTo(scintHit);
 
     // Using only analog signal (ADC conversion is still experimental)
     const sipm::SiPMAnalogSignal anaSignal = m_sensor->signal();
 
     // if the signal never exceeds the threshold, it will return -1.
     const double integral =
-        std::max(0., anaSignal.integral(m_gateStart, m_gateL, m_thres));           // (intStart, intGate, threshold)
-    const double toa = std::max(0., anaSignal.toa(m_gateStart, m_gateL, m_thres)); // (intStart, intGate, threshold)
-    const double gateEnd = m_gateStart.value() + m_gateL.value();
+        std::max(0., anaSignal.integral(m_gateStart - minTime, m_gateL, m_thres));           // (intStart, intGate, threshold)
+    const double toa = std::max(0., anaSignal.toa(m_gateStart - minTime, m_gateL, m_thres)); // (intStart, intGate, threshold)
 
     digiHit.setEnergy(integral * m_scaleADC.value());
     digiHit.setEnergyError(m_scaleADC.value() * std::sqrt(integral));
@@ -258,29 +276,34 @@ StatusCode SimulateSiPMwithEdep::execute(const EventContext&) const {
 
     // Set waveform properties
     waveform.setInterval(m_sampling);
-    waveform.setTime(toa + m_gateStart);
+    waveform.setTime(m_storeFullWaveform.value() ? minTime : toa + m_gateStart);
     waveform.setCellID(scintHit.getCellID());
 
     // Fill the waveform with amplitude values
     // The sipm::SiPMAnalogSignal can be iterated as an std::vector<double>
+    const double gateEnd = m_gateStart.value() + m_gateL.value();
+
     if (integral > 0.) {
       for (unsigned bin = 0; bin < anaSignal.size(); bin++) {
         float amp = anaSignal[bin];
 
-        double tStart = static_cast<double>(bin) * m_sampling;
-        double tEnd = static_cast<double>(bin + 1) * m_sampling;
+        double tStart = static_cast<double>(bin) * m_sampling + minTime;
+        double tEnd = static_cast<double>(bin + 1) * m_sampling + minTime;
         double center = (tStart + tEnd) / 2.;
 
         // Only include samples within our time window of interest
-        if (center < toa + m_gateStart)
-          continue;
+        if (!m_storeFullWaveform.value()) {
+          if (center < toa + m_gateStart)
+            continue;
 
-        if (center > gateEnd)
-          continue;
+          if (center > gateEnd)
+            continue;
 
-        // only store over threshold
-        if (amp > m_thres)
-          waveform.addToAmplitude(amp);
+          if (amp < m_thres)
+            continue;
+        }
+
+        waveform.addToAmplitude(amp);
       }
     }
   }
