@@ -558,7 +558,10 @@ StatusCode CreateFCCeeCaloNeighbours::initialize() {
                 if (segmentationType2 == "FCCSWEndcapTurbine_k4geo") {
                   auto endcapDecoder =
                       m_geoSvc->getDetector()->readout(m_readoutNamesSegmented[iSys2]).idSpec().decoder();
-
+                  if (ecalEndcapTurbineSegmentation == nullptr) {
+                    ecalEndcapTurbineSegmentation = dynamic_cast<dd4hep::DDSegmentation::FCCSWEndcapTurbine_k4geo*>(aSegmentation2);
+                  }
+ 
                   int iWheel = 2;
                   int iSide;
                   if (itheta == extrema[2].first) {
@@ -924,7 +927,7 @@ StatusCode CreateFCCeeCaloNeighbours::initialize() {
         maxLayerIdEndcap[1] = minMaxLayerId[1].second;
 
         // create the endcap cellID that should become the neighbour for the barrel cell
-        dd4hep::DDSegmentation::CellID endcapCellID;
+        dd4hep::DDSegmentation::CellID endcapCellID = 0;
         (*decoderHCalEndcap)[m_fieldNamesSegmented[hcalEndcapId]].set(endcapCellID,
                                                                       m_fieldValuesSegmented[hcalEndcapId]);
         (*decoderHCalEndcap)["phi"].set(endcapCellID, iphi);
@@ -1206,7 +1209,7 @@ StatusCode CreateFCCeeCaloNeighbours::initialize() {
         maxLayerIdEndcap[1] = minMaxLayerId[1].second;
 
         // create the endcap cellID that should become the neighbour for the barrel cell
-        dd4hep::DDSegmentation::CellID endcapCellID;
+        dd4hep::DDSegmentation::CellID endcapCellID = 0;
         (*decoderHCalEndcap)[m_fieldNamesSegmented[hcalEndcapId]].set(endcapCellID,
                                                                       m_fieldValuesSegmented[hcalEndcapId]);
         (*decoderHCalEndcap)["phi"].set(endcapCellID, iphi);
