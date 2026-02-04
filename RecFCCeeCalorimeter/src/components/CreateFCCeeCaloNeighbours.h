@@ -79,7 +79,6 @@ private:
   Gaudi::Property<uint> m_ecalBarrelSysId{this, "ecalBarrelSysId", 4};
   Gaudi::Property<uint> m_ecalEndcapSysId{this, "ecalEndcapSysId", 5};  
   Gaudi::Property<uint> m_hcalBarrelSysId{this, "hcalBarrelSysId", 8};
-  // System ID of HCAL endcap
   Gaudi::Property<uint> m_hcalEndcapSysId{this, "hcalEndcapSysId", 9};
 
   // For combination of barrels: flag if ECal and HCal barrels should be merged
@@ -101,7 +100,8 @@ private:
   std::string m_outputFileName;
 
   // Lookup tables/histograms for cell positions in the barrel and endcap EM
-  // calorimeters. The vectors of histograms function as lookups for the module ID  // vs phi, since each histogram has bins in phi with the content set to the
+  // calorimeters. The vectors of histograms function as lookups for the module ID
+  // vs phi, since each histogram has bins in phi with the content set to the
   // module ID associated with the phi range of that bin.  Each histogram in the
   // vector represents one layer of the barrel or one rho bin of the endcap.
   // The vectors of Float_t, on the other hand, store the central value of
@@ -117,8 +117,9 @@ private:
 
   std::vector< TH1F* > m_EMEC_h_module_vs_phi_pos;
   std::vector< TH1F* > m_EMEC_h_module_vs_phi_neg;
-  std::vector< std::vector<Float_t>> m_EMEC_pos_phi_lookup;
-  std::vector< std::vector<Float_t>> m_EMEC_neg_phi_lookup;
+  // vectors to be removed
+  // std::vector< std::vector<Float_t>> m_EMEC_pos_phi_lookup;
+  // std::vector< std::vector<Float_t>> m_EMEC_neg_phi_lookup;
   std::vector<Float_t> m_EMEC_theta_lookup;
 
   StatusCode initialize_lookups();
