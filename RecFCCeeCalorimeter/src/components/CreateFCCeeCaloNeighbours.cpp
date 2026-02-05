@@ -1954,7 +1954,7 @@ StatusCode CreateFCCeeCaloNeighbours::finalize() {
         }
         std::cout << std::endl;
     }
-    */
     f->Close();
+    */
     return Service::finalize();
 }
