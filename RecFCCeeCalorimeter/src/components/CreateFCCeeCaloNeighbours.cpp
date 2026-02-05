@@ -1785,10 +1785,11 @@ StatusCode CreateFCCeeCaloNeighbours::initialize_lookups() {
       unsigned numECCellsRho = ecalEndcapTurbineSegmentation->numCellsRho(iWheel);
       info() << "wheel = " << iWheel << ", modules = " << numECModules << ", rho cells = " << numECCellsRho << endmsg;
 
-      // GM: dont think this is actually needed
+      // GM: dont think this is actually needed since we do push_back later..
       m_EMEC_h_module_vs_phi_pos.reserve(numECCellsRho);
       m_EMEC_h_module_vs_phi_neg.reserve(numECCellsRho);
 
+      // unused vectors
       //m_EMEC_pos_phi_lookup.reserve(numECCellsRho);
       //m_EMEC_neg_phi_lookup.reserve(numECCellsRho);
 
@@ -1823,7 +1824,7 @@ StatusCode CreateFCCeeCaloNeighbours::initialize_lookups() {
             h_pos = new TH1F(histname_pos.c_str(), histname_pos.c_str(), numECModules, -TMath::Pi(), TMath::Pi());
             m_EMEC_h_module_vs_phi_pos.push_back(h_pos);
           }
-          for (unsigned iECmodule = 0; iECmodule < numECModules; iECmodule++) {
+          for (unsigned int iECmodule = 0; iECmodule < numECModules; iECmodule++) {
             (*endcapDecoder)["module"].set(endcapCellId, iECmodule);
             (*endcapDecoder)["rho"].set(endcapCellId, iECrho);
             (*endcapDecoder)[m_activeFieldNamesSegmented[iSys]].set(endcapCellId, ecalEndcapTurbineSegmentation->expLayer(iWheel, iECrho, iECz));
@@ -1908,6 +1909,7 @@ StatusCode CreateFCCeeCaloNeighbours::initialize_lookups() {
 
 StatusCode CreateFCCeeCaloNeighbours::finalize() {
     // for debug, to be removed
+    /*
     TFile* f=new TFile("lookup.root", "RECREATE");
     for (unsigned int i=0; i<m_EMB_h_module_vs_phi.size(); i++) {
         m_EMB_h_module_vs_phi[i]->Write();
@@ -1935,6 +1937,8 @@ StatusCode CreateFCCeeCaloNeighbours::finalize() {
         std::cout << m_EMEC_theta_lookup[i] << " ";
     }
     std::cout << std::endl;
+    */
+    
     /*
     std::cout << "m_EMEC_pos_phi_lookup" << std::endl;
     for (unsigned int i=0; i<m_EMEC_pos_phi_lookup.size(); i++) {
